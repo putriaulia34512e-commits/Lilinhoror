@@ -44,9 +44,23 @@
           { src: i512, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       };
-      var m = document.createElement('link'); m.rel = 'manifest';
-      m.href = URL.createObjectURL(new Blob([JSON.stringify(man)], { type: 'application/manifest+json' }));
-      document.head.appendChild(m);
+      // Utama: manifest & ikon berupa FILE asli (manifest.webmanifest + icon-*.png) supaya Chrome bisa memasang
+      // sebagai aplikasi sungguhan (WebAPK) dengan splash berlogo lilin. Cadangan: manifest dari script
+      // (hanya jadi pintasan biasa, splash-nya logo Chrome).
+      var base0 = url.replace(/[^\/]*$/, '');
+      var addMan = function (href, cors) {
+        var m = document.createElement('link'); m.rel = 'manifest'; m.href = href;
+        if (cors) m.crossOrigin = 'use-credentials';
+        document.head.appendChild(m);
+      };
+      var fallbackMan = function () { addMan(URL.createObjectURL(new Blob([JSON.stringify(man)], { type: 'application/manifest+json' }))); };
+      if (/^https?:/.test(location.protocol)) {
+        fetch(base0 + 'manifest.webmanifest', { method: 'HEAD' }).then(function (r) {
+          if (!r.ok) throw 0;
+          var a = document.createElement('link'); a.rel = 'apple-touch-icon'; a.href = base0 + 'icon-192.png'; document.head.appendChild(a);
+          addMan(base0 + 'manifest.webmanifest', true);
+        }).catch(fallbackMan);
+      } else fallbackMan();
 
       // Kunci landscape sungguhan saat dibuka sebagai aplikasi (status bar & navigasi HP ikut landscape)
       var lockLand = function () { try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(function () {}); } catch (e) {} };
@@ -133,11 +147,31 @@
       }
       #cnt {
         position: absolute;
-        top: calc(10px + var(--sat,0px));
+        top: calc(8px + var(--sat,0px));
         left: calc(16px + var(--sal,0px));
-        font-size: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1;
         text-shadow: 0 0 6px #000;
       }
+      #cnt .ch {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 32px;
+        padding: 0 13px 0 8px;
+        box-sizing: border-box;
+        border-radius: 17px;
+        background: rgba(0,0,0,.5);
+        border: 1px solid rgba(232,220,200,.28);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      #cnt .ch svg { width: 22px; height: 22px; flex: none; display: block; }
+      #cnt .ch.ok { border-color: rgba(120,220,140,.7); color: #b8f0c4; }
       .rb {
         position: absolute;
         width: calc(56px*var(--bs,1));
@@ -215,13 +249,13 @@
         width: 100%;
       }
       #hpb {
-        top: calc(40px + var(--sat,0px));
+        top: calc(52px + var(--sat,0px));
       }
       #hpb i {
         background: #b3201a;
       }
       #stb {
-        top: calc(56px + var(--sat,0px));
+        top: calc(68px + var(--sat,0px));
         height: 6px;
       }
       #stb i {
@@ -1579,18 +1613,12 @@
       cp.visible = t.ro;
     }
 
-    // ===== Layout stage 16:9 (selalu landscape) =====
+    // ===== Layout stage mengikuti rasio layar (selalu landscape) =====
     let SW = innerWidth, SH = innerHeight, PT = false, lx = 0, ly = 0, ox = 0, oy = 0;
     function rs() {
       const vw = innerWidth, vh = innerHeight, lo = Math.max(vw, vh), sh = Math.min(vw, vh);
-      let W, H;
-      if (lo / sh >= 16 / 9) {
-        H = sh;
-        W = sh * 16 / 9;
-      } else {
-        W = lo;
-        H = lo * 9 / 16;
-      }
+      // Panggung mengikuti rasio asli layar (tidak dikunci 16:9)
+      const W = lo, H = sh;
       PT = vh > vw;
       SW = W;
       SH = H;
@@ -1868,7 +1896,10 @@
       gear: sv('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>')
     };
     const hud = () => {
-      $('cnt').innerHTML = IC.c + ' ' + got + ' / ' + need + '&nbsp;&nbsp;&nbsp;' + IC.key + ' ' + keys + ' / ' + kneed;
+      const CI = '<svg viewBox="0 0 24 24"><path d="M12 1.2c2.3 2.7 3.2 4.4 3.2 6a3.2 3.2 0 0 1-6.4 0c0-1.6.9-3.3 3.2-6z" fill="#ffab2e"/><path d="M12 5.2c1 1.2 1.4 2 1.4 2.8a1.4 1.4 0 0 1-2.8 0c0-.8.4-1.6 1.4-2.8z" fill="#fff1b8"/><rect x="11.5" y="10.6" width="1" height="1.6" rx=".5" fill="#4a3a28"/><path d="M8 12.2h8v7.3H8z" fill="#efe3c8"/><path d="M8 12.2h8v1.8c-.9.7-1.4.4-2 .9-.6.5-1 1-2 .3-.9-.6-1.5-.1-2-.5-.5-.3-1.2-.6-2-.2z" fill="#d9c7a0"/><path d="M5 19.5h14l-1.4 2.8H6.4z" fill="#9a7440"/></svg>';
+      const KI = '<svg viewBox="0 0 24 24"><circle cx="7.2" cy="12" r="4.6" fill="none" stroke="#f1c45b" stroke-width="2.2"/><circle cx="7.2" cy="12" r="1.2" fill="#f1c45b"/><rect x="11.4" y="10.9" width="11" height="2.3" rx="1.1" fill="#f1c45b"/><rect x="16.2" y="12.6" width="2.1" height="3.6" rx=".7" fill="#f1c45b"/><rect x="19.9" y="12.6" width="2.1" height="2.6" rx=".7" fill="#f1c45b"/></svg>';
+      $('cnt').innerHTML = '<span class="ch' + (got >= need ? ' ok' : '') + '">' + CI + '<span>' + got + ' / ' + need + '</span></span>' +
+        '<span class="ch' + (keys >= kneed ? ' ok' : '') + '">' + KI + '<span>' + keys + ' / ' + kneed + '</span></span>';
       $('hpi').style.width = hp + '%';
       $('sti').style.width = st + '%';
     };

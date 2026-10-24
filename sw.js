@@ -1,17 +1,18 @@
-// Service worker Lilin Terakhir (untuk hosting biasa: GitHub Pages, Netlify, dll).
-// Taruh sw.js di folder yang sama dengan file game.
-const CACHE = 'lilin-terakhir-v3';
+// Service worker sederhana: game tetap bisa dibuka saat offline
+const CACHE = 'lilin-terakhir-v1';
+const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(k => Promise.all(k.filter(n => n !== CACHE).map(n => caches.delete(n)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', e => {
-  const req = e.request;
-  if (req.method !== 'GET' || !req.url.startsWith(self.location.origin)) return; // iklan & font luar tidak di-cache
+  if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(req).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put(req, cp)); return res; })
-      .catch(() => caches.match(req).then(r => r || caches.match('./')))
+    fetch(e.request).then(r => {
+      if (r.ok && new URL(e.request.url).origin === location.origin) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(e.request, cp)); }
+      return r;
+    }).catch(() => caches.match(e.request).then(m => m || caches.match('./index.html')))
   );
 });
