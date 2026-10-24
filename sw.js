@@ -1,6 +1,6 @@
 // Service worker Lilin Terakhir (untuk hosting biasa: GitHub Pages, Netlify, dll).
 // Taruh sw.js di folder yang sama dengan file game.
-const CACHE = 'lilin-terakhir-v1';
+const CACHE = 'lilin-terakhir-v3';
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])).then(() => self.skipWaiting()));
 });
