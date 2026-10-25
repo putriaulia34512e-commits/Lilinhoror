@@ -1,5 +1,5 @@
 // Service worker sederhana: game tetap bisa dibuka saat offline
-const CACHE = 'lilin-terakhir-v1';
+const CACHE = 'lilin-terakhir-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

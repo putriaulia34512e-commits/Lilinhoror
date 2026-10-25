@@ -5,7 +5,7 @@
   "description": "Game horor: bertahan hidup dengan lilin terakhir.",
   "start_url": "./",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "landscape",
   "background_color": "#000000",
   "theme_color": "#000000",
@@ -29,9 +29,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "display_override": [
-    "fullscreen",
-    "standalone"
   ]
 }
