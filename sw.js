@@ -1,4 +1,4 @@
-const CACHE = 'lilin-terakhir-v3';
+const CACHE = 'lilin-terakhir-v4';
 const FILES = ['./manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
